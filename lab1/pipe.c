@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 			pid = fork();
 			// Fork error:
 			if (pid == -1){
-				perr("ERROR: Fork error.");
+				perror("ERROR: Fork error.");
 				exit(errno);
 			}
 
