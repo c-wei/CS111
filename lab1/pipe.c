@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 		*/
 		int fd1[2];
 		int fd2[2];
-		
+		pid_t pids[argc - 1];
 		for(int i = 1; i < argc; i++){
 
 			if (i < argc - 1){
@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
 			
 			// Attempt to fork
 			pid_t pid = fork();
-			pid = fork();
 			// Fork error:
 			if (pid == -1){
 				perror("ERROR: Fork error.");
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
 			}
 
 			// Child Process:
-			else if(pid == 0) 
+			if(pid == 0) 
 			{
 				if (i > 1){
 					dup2(fd1[0],0); // read from prev pipe's read end
@@ -63,7 +62,7 @@ int main(int argc, char *argv[])
 				if(i < argc-1){
 					dup2(fd2[1], 1); // write to current pipe's write end
 					close(fd2[0]);
-					close(fd2[0]);
+					close(fd2[1]);
 				}
 	
 				if(execlp(argv[i], argv[i], NULL) == -1){
@@ -73,27 +72,22 @@ int main(int argc, char *argv[])
 				return 0;
 			}
 			// Parent Process:
-			else
-			{
-				int wstatus;
-				waitpid(pid, &wstatus, 0);
-				if(!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0){
-					exit(WEXITSTATUS(wstatus));
-				}
+			else {
+			pids[i - 1] = pid;
 
-				close(fd2[1]);
-				if(i < argc-1){
-					fd1[0] = fd2[1];
-					fd1[1] = fd2[1];
-				}
-				else{
-					close(fd1[0]);
-					close(fd1[1]);
-					close(fd2[0]);
-					close(fd2[1]);
-				}
-
+			if(i > 1){
+				close(fd1[0]);
+				close(fd1[1]);
 			}
+			if(i < argc - 1){
+				fd1[0] = fd2[0];
+				fd1[1] = fd2[1];
+			}
+		}
+		}
+		int wstatus;
+		for(int i = 0; i < argc-1; i++){
+			waitpid(pids[i], &wstatus, 0);
 		}
 	}
 	return 0;
