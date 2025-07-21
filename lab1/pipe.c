@@ -86,9 +86,20 @@ int main(int argc, char *argv[])
 		}
 		}
 		int wstatus;
-		for(int i = 0; i < argc-1; i++){
+		int final_status = 0;
+		for(int i = 0; i < argc - 1; i++){
 			waitpid(pids[i], &wstatus, 0);
+			if (WIFEXITED(wstatus)) {
+				int code = WEXITSTATUS(wstatus);
+				if (code != 0)
+					final_status = code;
+			} else {
+				// child crashed or was killed
+				final_status = 1;
+			}
 		}
+		return final_status;
+
 	}
 	return 0;
 }
