@@ -143,6 +143,19 @@ void init_processes(const char *path,
   close(fd);
 }
 
+bool check_dynamic_times(struct process *data, u32 size) {
+  
+  struct process * current_process;
+  for (u32 i = 0; i < size; i++) {
+
+    current_process = &data[i];
+    if (current_process->dynamic_burst_time != 0) return false;
+  }
+
+  return true;
+
+}
+
 int main(int argc, char *argv[])
 {
   if (argc != 3)
