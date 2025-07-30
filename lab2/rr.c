@@ -193,6 +193,7 @@ int main(int argc, char *argv[])
         current_proc->response_time = current_time - current_proc->arrival_time;
         total_response_time += current_proc->response_time;
       }
+    }
 
       if(current_proc){
         current_proc->remaining_time--;
