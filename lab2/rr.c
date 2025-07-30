@@ -21,11 +21,8 @@ struct process
   TAILQ_ENTRY(process) pointers;
 
   /* Additional fields here */
-  u32 remaining_time;
-  u32 waiting_time;
-  u32 response_time;
-  bool started;
-  u32 quantum_used;
+  u32 dynamic_burst_time;
+  bool seen;
   /* End of "Additional fields here" */
 };
 
@@ -165,58 +162,77 @@ int main(int argc, char *argv[])
   u32 total_response_time = 0;
 
   /* Your code here */
-  for(u32 i = 0; i < size; i++){
-    data[i].remaining_time = data[i].burst_time;
-    data[i].waiting_time = 0;
-    data[i].response_time = 0;
-    data[i].started = false;
-    data[i].quantum_used = 0;
+  struct process *current_process;
+  u32 current_time = data[0].arrival_time;
+  for (u32 i = 0; i < size; i++) {
+    current_process = &data[i];
+    current_process->dynamic_burst_time = current_process->burst_time;
+    current_process->seen = false;
+    if (current_process->arrival_time < current_time) current_time = current_process->arrival_time;
   }
 
-  u32 current_time = 0;
-  u32 finished = 0;
-  u32 next_process = 0;
-  struct process *current_proc = NULL;
+  u32 counter = 1;
+  u32 total = current_time;
+  bool finished = false;
+  if (quantum_length == 0) finished = true;
+  struct process * new_process;
+  while (!finished) {
 
-  while(finished<size){
-    while (next_process < size && data[next_process].arrival_time <=current_time){
-      TAILQ_INSERT_TAIL(&list, &data[next_process], pointers);
-      next_process++;
-    }
-
-    if(!current_proc && !TAILQ_EMPTY(&list)){
-      current_proc = TAILQ_FIRST(&list);
-      TAILQ_REMOVE(&list, current_proc, pointers);
-
-      if(!current_proc -> started){
-        current_proc->started = true;
-        current_proc->response_time = current_time - current_proc->arrival_time;
-        total_response_time += current_proc->response_time;
+      // Check for new process arrivals
+      for (u32 i = 0; i < size; i++) {
+        new_process = &data[i]; 
+        if (new_process->arrival_time == current_time) TAILQ_INSERT_TAIL(&list, new_process, pointers);
       }
-    }
 
-      if(current_proc){
-        current_proc->remaining_time--;
-        current_proc->quantum_used++;
-        struct process *p;
-        TAILQ_FOREACH(p, &list, pointers){
-          p->waiting_time++;
+      // If a process is done with its timeshare, send it to back of queue
+      if (counter == quantum_length + 1 && current_process->dynamic_burst_time > 0) {
+        TAILQ_INSERT_TAIL(&list, current_process, pointers);
+        counter = 1;
+      }
+
+    /*
+      struct process * np;
+      printf("Queue at time %d:", current_time);
+      TAILQ_FOREACH(np, &list, pointers) printf(" %d->", np->pid);
+      printf("\n");
+    */
+
+      // If process bursts or is done with timeshare, get process at front of queue and pop it off
+      if (counter == 1) {
+
+        if (TAILQ_EMPTY(&list)) return -1;
+
+        current_process = TAILQ_FIRST(&list);
+        TAILQ_REMOVE(&list, current_process, pointers);
+      }
+      
+      // Keep track of first time a process runs since entering the queue
+      if (!current_process->seen) {
+          total_response_time = total_response_time + total - current_process->arrival_time;
+          current_process->seen = true;
+      }
+
+
+      // If a process is in the middle of time quantum
+      if (counter < quantum_length + 1) {
+
+        // Decrease dynamic burst time by 1
+        if (current_process->dynamic_burst_time > 0) {
+            current_process->dynamic_burst_time = current_process->dynamic_burst_time - 1;
+            total++;
         }
 
-        if(current_proc->remaining_time == 0){
-          total_waiting_time += current_proc->waiting_time;
-          finished++;
-          current_proc=NULL;
-        } else if(current_proc->quantum_used >= quantum_length){
-          TAILQ_INSERT_TAIL(&list, current_proc, pointers);
-          current_proc -> quantum_used = 0;
-          current_proc = NULL;
+        // If process is finished, calculate its wait time
+        if (current_process->dynamic_burst_time == 0) {
+          total_waiting_time = total_waiting_time + total - current_process->arrival_time - current_process->burst_time;
+          counter = 0;
         }
+
       }
+
+      counter++;
       current_time++;
-      if(!current_proc && TAILQ_EMPTY(&list) && next_process < size){
-        current_time = data[next_process].arrival_time;
-      }
+      if (check_dynamic_times(data, size)) finished = true;
   }
 
   /* End of "Your code here" */
