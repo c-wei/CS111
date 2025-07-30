@@ -1,17 +1,24 @@
-## UID: 123456789
+## UID: 306220886
 
 ## Pipe Up
 
-One sentence description
+Low-level C program to replicate the pipe operator in shell by manipulating file descriptors.
 
 ## Building
+Make sure you're in the directory of your pipe.c and Makefile and run the command:
 
-Explain briefly how to build your program
+make
 
 ## Running
 
-Show an example run of your program, using at least two additional arguments, and what to expect
+cs111@cs111 CS111/labi (main %) » ./pipe ls cat wc
+7 7 63
+
+cs111@cs111 CS111/labl (main %) » ls | cat | wc
+7 7 63
 
 ## Cleaning up
 
-Explain briefly how to clean up all binary files
+Run the command: 
+
+make clean
