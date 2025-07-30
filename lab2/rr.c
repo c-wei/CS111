@@ -176,11 +176,6 @@ int main(int argc, char *argv[])
   u32 next_process = 0;
 
   while(finished<size){
-    while(next_process < size && data[next_process].arrival_time <= current_time){
-      TAILQ_INSERT_TAIL(&list, &data[next_process], pointers);
-      next_process++;
-    }
-
     if(!TAILQ_EMPTY(&list)){
       struct process *proc = TAILQ_FIRST(&list);
       TAILQ_REMOVE(&list, proc, pointers);
@@ -207,10 +202,14 @@ int main(int argc, char *argv[])
         total_waiting_time += proc -> waiting_time;
         finished++;
       }
-    } else{
-      if(next_process < size){
-        current_time = data[next_process].arrival_time;
-      }
+    } 
+    while (next_process < size && data[next_process].arrival_time <=current_time){
+      TAILQ_INSERT_TAIL(&list, &data[next_process], pointers);
+      next_process++;
+    }
+    
+    if(TAILQ_EMPTY(&list) && next_process < size){
+      current_time = data[next_process].arrival_time;
     }
   }
 
