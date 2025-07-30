@@ -25,6 +25,7 @@ struct process
   u32 waiting_time;
   u32 response_time;
   bool started;
+  u32 quantum_used;
   /* End of "Additional fields here" */
 };
 
@@ -169,48 +170,52 @@ int main(int argc, char *argv[])
     data[i].waiting_time = 0;
     data[i].response_time = 0;
     data[i].started = false;
+    data[i].quantum_used = 0;
   }
 
   u32 current_time = 0;
   u32 finished = 0;
   u32 next_process = 0;
+  struct process *current_proc = NULL;
 
   while(finished<size){
-    if(!TAILQ_EMPTY(&list)){
-      struct process *proc = TAILQ_FIRST(&list);
-      TAILQ_REMOVE(&list, proc, pointers);
-
-      if(!proc -> started){
-        proc->started = true;
-        proc->response_time = current_time - proc->arrival_time;
-        total_response_time += proc->response_time;
-      }
-
-      u32 run_time = (proc->remaining_time < quantum_length) ? proc->remaining_time : quantum_length;
-      proc->remaining_time -= run_time;
-
-      struct process *p;
-      TAILQ_FOREACH(p, &list, pointers){
-        p->waiting_time += run_time;
-      }
-
-      current_time += run_time;
-
-      if(proc->remaining_time > 0){
-        TAILQ_INSERT_TAIL(&list, proc, pointers);
-      } else{
-        total_waiting_time += proc -> waiting_time;
-        finished++;
-      }
-    } 
     while (next_process < size && data[next_process].arrival_time <=current_time){
       TAILQ_INSERT_TAIL(&list, &data[next_process], pointers);
       next_process++;
     }
-    
-    if(TAILQ_EMPTY(&list) && next_process < size){
-      current_time = data[next_process].arrival_time;
-    }
+
+    if(!current_proc && !TAILQ_EMPTY(&list)){
+      current_proc = TAILQ_FIRST(&list);
+      TAILQ_REMOVE(&list, current_proc, pointers);
+
+      if(!current_proc -> started){
+        current_proc->started = true;
+        current_proc->response_time = current_time - current_proc->arrival_time;
+        total_response_time += current_proc->response_time;
+      }
+
+      if(current_proc){
+        current_proc->remaining_time--;
+        current_proc->quantum_used++;
+        struct process *p;
+        TAILQ_FOREACH(p, &list, pointers){
+          p->waiting_time++;
+        }
+
+        if(current_proc->remaining_time == 0){
+          total_waiting_time += current_proc->waiting_time;
+          finished++;
+          current_proc=NULL;
+        } else if(current_proc->quantum_used >= quantum_length){
+          TAILQ_INSERT_TAIL(&list, current_proc, pointers);
+          current_proc -> quantum_used = 0;
+          current_proc = NULL;
+        }
+      }
+      current_time++;
+      if(!current_proc && TAILQ_EMPTY(&list) && next_process < size){
+        current_time = data[next_process].arrival_time;
+      }
   }
 
   /* End of "Your code here" */
