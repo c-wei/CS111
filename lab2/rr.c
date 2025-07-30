@@ -191,8 +191,7 @@ int main(int argc, char *argv[])
         total_response_time += proc->response_time;
       }
 
-      u32 run_time = (proc->remaining_time < quantum_length) ? proc->remaining_time;
-      quantum_length;
+      u32 run_time = (proc->remaining_time < quantum_length) ? proc->remaining_time : quantum_length;
       proc->remaining_time -= run_time;
 
       struct process *p;
