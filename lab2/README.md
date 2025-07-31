@@ -1,6 +1,6 @@
 # You Spin Me Round Robin
 
-TODO
+The round-robin scheduler, implemented in C, uses a TAILQ queue to manage processes, adding fields to the process struct to track remaining time, first run time, completion time, and start status. It executes processes for the minimum of quantum length or remaining time, calculating waiting time (completion time minus arrival and burst times) and response time (first run time minus arrival time) until all processes complete.
 
 ## Building
 
