@@ -22,6 +22,8 @@ struct process
 
   /* Additional fields here */
   u32 remaining_time;
+  u32 start_time;
+  u32 finish_time;
   bool has_started;
   /* End of "Additional fields here" */
 };
@@ -143,19 +145,6 @@ void init_processes(const char *path,
   close(fd);
 }
 
-bool check_dynamic_times(struct process *data, u32 size) {
-  
-  struct process * current_process;
-  for (u32 i = 0; i < size; i++) {
-
-    current_process = &data[i];
-    if (current_process->remaining_time != 0) return false;
-  }
-
-  return true;
-
-}
-
 int main(int argc, char *argv[])
 {
   if (argc != 3)
@@ -175,63 +164,56 @@ int main(int argc, char *argv[])
   u32 total_response_time = 0;
 
   /* Your code here */
-  struct process *current_process;
-  u32 current_time = data[0].arrival_time;
-  for (u32 i = 0; i < size; i++) {
-    current_process = &data[i];
-    current_process->remaining_time = current_process->burst_time;
-    current_process->has_started = false;
-    if (current_process->arrival_time < current_time) current_time = current_process->arrival_time;
+  for(u32 i = 0; i < size; i++){
+    data[i].remaining_time = data[i].burst_time;
+    data[i].start_time =  0;
+    data[i].finish_time = 0;
+    data[i].has_started = false;
   }
 
-  u32 counter = 1;
-  u32 total = current_time;
-  bool finished = false;
-  if (quantum_length == 0) finished = true;
-  struct process * new_process;
-  while (!finished) {
+  u32 current_time = 0;
+  u32 completed_processes = 0;
+  u32 i = 0;
 
-      for (u32 i = 0; i < size; i++) {
-        new_process = &data[i]; 
-        if (new_process->arrival_time == current_time) 
-          TAILQ_INSERT_TAIL(&list, new_process, pointers);
+  while(completed_processes < size){
+    while (i < size && data[i].arrival_time <= current_time){
+      TAILQ_INSERT_TAIL(&list, &data[i], pointers);
+      i++;
+    }
+
+    if(!TAILQ_EMPTY(&list)){
+      struct process *current_process = TAILQ_FIRST(&list);
+      TAILQ_REMOVE(&list, current_process, pointers);
+
+      if(!current_process->has_started){
+        current_process->has_started = true;
+        current_process->start_time = current_time;
       }
 
-      if (counter == quantum_length + 1 && current_process->remaining_time > 0) {
+      u32 exec_time = current_process->remaining_time < quantum_length ? current_process->remaining_time : quantum_length;
+      current_process->remaining_time -= exec_time;
+      current_time += exec_time;
+
+
+      if(current_process->remaining_time == 0){
+        current_process->finish_time = current_time;
+        completed_processes++;
+
+        total_waiting_time += current_process->finish_time - current_process->arrival_time - current_process->burst_time;
+        total_response_time += current_process->start_time - current_process->arrival_time;
+      } else {
+        while(i < size && data[i].arrival_time <= current_time){
+          TAILQ_INSERT_TAIL(&list, &data[i], pointers);
+          i++;
+        }
         TAILQ_INSERT_TAIL(&list, current_process, pointers);
-        counter = 1;
       }
-      if (counter == 1) {
-
-        if (TAILQ_EMPTY(&list)) return -1;
-
-        current_process = TAILQ_FIRST(&list);
-        TAILQ_REMOVE(&list, current_process, pointers);
-      }
-      
-      if (!current_process->has_started) {
-          total_response_time = total_response_time + total - current_process->arrival_time;
-          current_process->has_started = true;
-      }
-
-      if (counter < quantum_length + 1) {
-
-        if (current_process->remaining_time > 0) {
-            current_process->remaining_time = current_process->remaining_time - 1;
-            total++;
-        }
-
-        if (current_process->remaining_time == 0) {
-          total_waiting_time = total_waiting_time + total - current_process->arrival_time - current_process->burst_time;
-          counter = 0;
-        }
-
-      }
-
-      counter++;
+    } else{
       current_time++;
-      if (check_dynamic_times(data, size)) finished = true;
+    }
+
   }
+
 
   /* End of "Your code here" */
 
