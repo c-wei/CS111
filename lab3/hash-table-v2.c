@@ -16,6 +16,7 @@ struct list_entry {
 SLIST_HEAD(list_head, list_entry);
 
 struct hash_table_entry {
+	pthread_mutex_t lock;
 	struct list_head list_head;
 };
 
@@ -25,10 +26,15 @@ struct hash_table_v2 {
 
 struct hash_table_v2 *hash_table_v2_create()
 {
+	uint32_t err = 0;
 	struct hash_table_v2 *hash_table = calloc(1, sizeof(struct hash_table_v2));
 	assert(hash_table != NULL);
 	for (size_t i = 0; i < HASH_TABLE_CAPACITY; ++i) {
 		struct hash_table_entry *entry = &hash_table->entries[i];
+		err = ptread_mutex_init(&entry->lock, NULL);
+		if(err != 0){
+			exit(err);
+		}
 		SLIST_INIT(&entry->list_head);
 	}
 	return hash_table;
