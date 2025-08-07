@@ -26,7 +26,7 @@ struct hash_table_v2 {
 
 struct hash_table_v2 *hash_table_v2_create()
 {
-	uint32_t err = 0;
+	uint32_t err;
 	struct hash_table_v2 *hash_table = calloc(1, sizeof(struct hash_table_v2));
 	assert(hash_table != NULL);
 	for (size_t i = 0; i < HASH_TABLE_CAPACITY; ++i) {
@@ -116,6 +116,7 @@ uint32_t hash_table_v2_get_value(struct hash_table_v2 *hash_table,
 
 void hash_table_v2_destroy(struct hash_table_v2 *hash_table)
 {
+	uint32_t err;
 	for (size_t i = 0; i < HASH_TABLE_CAPACITY; ++i) {
 		struct hash_table_entry *entry = &hash_table->entries[i];
 		struct list_head *list_head = &entry->list_head;
@@ -126,7 +127,7 @@ void hash_table_v2_destroy(struct hash_table_v2 *hash_table)
 			free(list_entry);
 		}
 
-		uint32_t err = pthread_mutex_destroy(&entry->lock);
+		err = pthread_mutex_destroy(&entry->lock);
 		if(err != 0) exit(err);
 	}
 	free(hash_table);
