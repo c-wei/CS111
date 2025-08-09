@@ -22,4 +22,4 @@ hash-table-tester: $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) hash-table-tester
+	rm -f $(OBJS) $(GRADED_OBJS) hash-table-tester tester-graded
