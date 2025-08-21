@@ -294,7 +294,7 @@ void write_block_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE] = {0x00};
+	u8 map_value[BLOCK_SIZE] = {0};
 
 	map_value[0] = 0xFF;
 	map_value[1] = 0xFF;
@@ -321,7 +321,7 @@ void write_inode_bitmap(int fd)
 	}
 
 	// TODO It's all yours
-	u8 map_value[BLOCK_SIZE] = {0x00};
+	u8 map_value[BLOCK_SIZE] = {0};
 	map_value[0] = 0xFF;
 	map_value[1] = 0x1F;
 
@@ -429,8 +429,9 @@ void write_inode_table(int fd) {
 	hello_inode.i_gid = 1000;
 	hello_inode.i_links_count = 1;
 	hello_inode.i_blocks = 0; /* These are oddly 512 blocks */
-	memcpy(hello_inode.i_block, "hello-world", 11);
-	write_inode(fd, HELLO_INO, &hello_inode);
+	char file_path[] = "hello-world";
+	memcpy((char*)hello_inode.i_block, file_path, 12); 
+		write_inode(fd, HELLO_INO, &hello_inode);
 
 }
 
@@ -516,7 +517,8 @@ void write_hello_world_file_block(int fd)
 	}
 
 	char hello_world[] = "Hello world\n";
-	if (write(fd, hello_world, sizeof(hello_world)) != sizeof(hello_world)){
+	size_t len = strlen(hello_world);
+	if (write(fd, hello_world, len) != len){
 		errno_exit("write");
 	}
 
