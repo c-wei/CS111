@@ -420,15 +420,15 @@ void write_inode_table(int fd) {
 						| EXT2_S_IWUSR
 						| EXT2_S_IRGRP
 						| EXT2_S_IROTH;
-	hello_world_inode.i_uid = 1000;
-	hello_world_inode.i_size = 11;
-	hello_world_inode.i_atime = current_time;
-	hello_world_inode.i_ctime = current_time;
-	hello_world_inode.i_mtime = current_time;
-	hello_world_inode.i_dtime = 0;
-	hello_world_inode.i_gid = 1000;
-	hello_world_inode.i_links_count = 1;
-	hello_world_inode.i_blocks = 0; /* These are oddly 512 blocks */
+	hello_inode.i_uid = 1000;
+	hello_inode.i_size = 11;
+	hello_inode.i_atime = current_time;
+	hello_inode.i_ctime = current_time;
+	hello_inode.i_mtime = current_time;
+	hello_inode.i_dtime = 0;
+	hello_inode.i_gid = 1000;
+	hello_inode.i_links_count = 1;
+	hello_inode.i_blocks = 0; /* These are oddly 512 blocks */
 	memcpy(hello_inode.i_block, "hello-world", 11);
 	write_inode(fd, HELLO_INO, &hello_inode);
 
